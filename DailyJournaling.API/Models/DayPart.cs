@@ -2,7 +2,7 @@
 {
     public class DayPart
     {
-        public int DayPartId { get; set; }
+        public Guid DayPartId { get; set; }
         public string Name { get; set; } = null!;
         public TimeSpan StartTime { get; set; }
 

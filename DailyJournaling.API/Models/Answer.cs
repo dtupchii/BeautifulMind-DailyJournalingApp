@@ -2,13 +2,13 @@
 {
     public class Answer
     {
-        public int AnswerId { get; set; }
+        public Guid AnswerId { get; set; }
         public string Text { get; set; } = null!;
 
-        public int QuestionId { get; set; }
+        public Guid QuestionId { get; set; }
         public Question Question { get; set; } = null!;
 
-        public int GratitudeRecordId { get; set; }
+        public Guid GratitudeRecordId { get; set; }
         public GratitudeRecord GratitudeRecord { get; set; } = null!;
 
     }
