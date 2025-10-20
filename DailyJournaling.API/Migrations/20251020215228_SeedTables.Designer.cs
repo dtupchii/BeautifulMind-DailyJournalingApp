@@ -3,6 +3,7 @@ using System;
 using DailyJournaling.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DailyJournaling.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251020215228_SeedTables")]
+    partial class SeedTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,9 +56,6 @@ namespace DailyJournaling.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<TimeSpan>("EndTime")
-                        .HasColumnType("interval");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -71,14 +71,12 @@ namespace DailyJournaling.API.Migrations
                         new
                         {
                             DayPartId = new Guid("ae21d84f-1f1a-4d63-a1cd-edcc41722a6c"),
-                            EndTime = new TimeSpan(0, 15, 59, 59, 0),
                             Name = "Morning",
                             StartTime = new TimeSpan(0, 4, 0, 0, 0)
                         },
                         new
                         {
                             DayPartId = new Guid("1471dab9-6624-4598-aee7-39c73a830d81"),
-                            EndTime = new TimeSpan(0, 3, 59, 59, 0),
                             Name = "Evening",
                             StartTime = new TimeSpan(0, 16, 0, 0, 0)
                         });
