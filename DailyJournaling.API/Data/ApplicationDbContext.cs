@@ -94,6 +94,40 @@ namespace DailyJournaling.API.Data
                     MoodStateName = "Very Unhappy"
                 }
             );
+
+            modelBuilder.Entity<User>().HasData(
+                new User
+                {
+                    UserId = Guid.Parse("d290f1ee-6c54-4b01-90e6-d701748f0851"),
+                    Email = "admin@mail.com",
+                    FirstName = "Admin",
+                    LastName = "User",
+                    PasswordHash = "hashed_password_placeholder",
+                    PasswordSalt = "salt_placeholder",
+                    PhoneNumber = "123-456-7890"
+                }
+            );
+
+            modelBuilder.Entity<GratitudeRecord>().HasData(
+                new GratitudeRecord
+                {
+                    GratitudeRecordId = Guid.Parse("d3b5f3a1-3c4e-4f5a-9f7e-1a2b3c4d5e6f"),
+                    CreatedAt = DateTime.UtcNow.Date,
+                    UserId = Guid.Parse("d290f1ee-6c54-4b01-90e6-d701748f0851"),
+                    MoodStateId = Guid.Parse("8a4381c7-c442-4404-aa78-951edba66a75"),
+                    DayPartId = Guid.Parse("ae21d84f-1f1a-4d63-a1cd-edcc41722a6c")
+                }
+            );
+
+            modelBuilder.Entity<Answer>().HasData(
+                new Answer
+                {
+                    AnswerId = Guid.Parse("a1b2c3d4-e5f6-4789-0abc-def123456789"),
+                    Text = "I am grateful for my family.",
+                    QuestionId = Guid.Parse("9d8e61ee-6e3a-48ed-9a78-67ce730c403e"),
+                    GratitudeRecordId = Guid.Parse("d3b5f3a1-3c4e-4f5a-9f7e-1a2b3c4d5e6f")
+                }
+            );
         }
     }
 }

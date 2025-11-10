@@ -1,4 +1,8 @@
 using DailyJournaling.API.Data;
+using DailyJournaling.API.Endpoints;
+using DailyJournaling.API.Mapping;
+using DailyJournaling.API.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -9,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.")));
+
+MapsterConfig.RegisterMappings();
 
 var app = builder.Build();
 
@@ -30,8 +36,9 @@ if (app.Environment.IsDevelopment())
 }
 app.UseHttpsRedirection();
 
-
 app.MapGet("/", () => Results.Ok("API is running")).WithOpenApi();
 
+app.MapGroup("/api/moodstates").MapMoodStateEndpoints();
+app.MapGroup("/api/answers").MapAnswerEndpoints();
 
 app.Run();
