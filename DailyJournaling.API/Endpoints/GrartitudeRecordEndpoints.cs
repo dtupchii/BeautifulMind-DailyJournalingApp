@@ -3,6 +3,7 @@ using DailyJournaling.API.Models;
 using DailyJournaling.API.Models.DTOs;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace DailyJournaling.API.Endpoints
 {
@@ -13,11 +14,14 @@ namespace DailyJournaling.API.Endpoints
             group.MapGet("/", async (ApplicationDbContext db) =>
             {
                 var records = await db.GratitudeRecords.Include(u => u.Answers).AsNoTracking().ToListAsync();
+                foreach (var rec in records)
+                    rec.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(rec.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 return Results.Ok(records.Adapt<List<GratitudeRecordDTO>>());
             });
             group.MapGet("/{id}", async (ApplicationDbContext db, Guid id) =>
             {
                 var record = await db.GratitudeRecords.Include(u => u.Answers).FirstOrDefaultAsync(r => r.GratitudeRecordId == id);
+                record.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(record.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 return record is not null ? Results.Ok(record.Adapt<GratitudeRecordDTO>()) : Results.NotFound();
             });
             group.MapPost("/", async (ApplicationDbContext db, GratitudeRecordCreateUpdateDTO newRecordDTO) =>
@@ -52,6 +56,7 @@ namespace DailyJournaling.API.Endpoints
                 newRecord.DayPartId = currentDayPart.DayPartId;
                 db.GratitudeRecords.Add(newRecord);
                 await db.SaveChangesAsync();
+                newRecord.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(newRecord.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
 
                 return Results.Created($"/{newRecord.GratitudeRecordId}", newRecord.Adapt<GratitudeRecordDTO>());
             });
@@ -65,6 +70,7 @@ namespace DailyJournaling.API.Endpoints
                     return Results.NotFound();
                 existingRecord.MoodStateId = updatedRecord.MoodStateId;
                 await db.SaveChangesAsync();
+                existingRecord.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(existingRecord.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 return Results.Ok(existingRecord.Adapt<GratitudeRecordDTO>());
             });
             group.MapDelete("/{id}", async (ApplicationDbContext db, Guid id) =>
