@@ -1,46 +1,82 @@
 ﻿using DailyJournaling.API.Data;
+using DailyJournaling.API.Models;
+using DailyJournaling.API.Models.DTOs;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace DailyJournaling.API.Endpoints
 {
     public static class GrartitudeRecordEndpoints
     {
-        public static WebApplication MapGratitudeRecordEndpoints(this WebApplication app)
+        public static RouteGroupBuilder MapGratitudeRecordEndpoints(this RouteGroupBuilder group)
         {
-            app.MapGet("api/gratitude-records", async (ApplicationDbContext db) =>
+            group.MapGet("/", async (ApplicationDbContext db) =>
             {
-                var records = await db.GratitudeRecords.ToListAsync();
-                return Results.Ok(records);
+                var records = await db.GratitudeRecords.Include(u => u.Answers).AsNoTracking().ToListAsync();
+                return Results.Ok(records.Adapt<List<GratitudeRecordDTO>>());
+            });
+            group.MapGet("/{id}", async (ApplicationDbContext db, Guid id) =>
+            {
+                var record = await db.GratitudeRecords.Include(u => u.Answers).FirstOrDefaultAsync(r => r.GratitudeRecordId == id);
+                return record is not null ? Results.Ok(record.Adapt<GratitudeRecordDTO>()) : Results.NotFound();
+            });
+            group.MapPost("/", async (ApplicationDbContext db, GratitudeRecordCreateUpdateDTO newRecordDTO) =>
+            {
+                if (newRecordDTO is null)
+                    return Results.BadRequest("newRecord is null");
+
+                // Determine current DayPart based on UTC time
+                // will change later to use data from the frontend
+                // because dayPay should be determined by the time user started filling the form
+                var now = DateTime.Now.TimeOfDay;
+                var dayParts = await db.DayParts.ToListAsync();
+                var currentDayPart = dayParts.FirstOrDefault(dp =>
+                {
+                    if (dp.StartTime <= dp.EndTime)
+                    {
+                        return now >= dp.StartTime && now <= dp.EndTime;
+                    }
+                    else
+                    {
+                        return now >= dp.StartTime || now <= dp.EndTime;
+                    }
+                });
+                if (currentDayPart == null)
+                    return Results.BadRequest("No valid DayPart found for the current time.");
+
+                var newRecord = newRecordDTO.Adapt<GratitudeRecord>();
+                newRecord.GratitudeRecordId = Guid.NewGuid();
+                newRecord.UserId = Guid.Parse("d290f1ee-6c54-4b01-90e6-d701748f0851"); // will change later to use data from the frontend
+                newRecord.CreatedAt = DateTime.UtcNow;
+                newRecord.DayPartId = currentDayPart.DayPartId;
+                db.GratitudeRecords.Add(newRecord);
+                await db.SaveChangesAsync();
+
+                return Results.Created($"/{newRecord.GratitudeRecordId}", newRecord.Adapt<GratitudeRecordDTO>());
+            });
+            group.MapPut("/{id}", async (ApplicationDbContext db, Guid id, GratitudeRecordCreateUpdateDTO updatedRecordDTO) =>
+            {
+                if (updatedRecordDTO is null)
+                    return Results.BadRequest("updatedRecord is null");
+                var updatedRecord = updatedRecordDTO.Adapt<GratitudeRecord>();
+                var existingRecord = await db.GratitudeRecords.FindAsync(id);
+                if (existingRecord is null)
+                    return Results.NotFound();
+                existingRecord.MoodStateId = updatedRecord.MoodStateId;
+                await db.SaveChangesAsync();
+                return Results.NoContent();
+            });
+            group.MapDelete("/{id}", async (ApplicationDbContext db, Guid id) =>
+            {
+                var record = await db.GratitudeRecords.FindAsync(id);
+                if (record is null)
+                    return Results.NotFound();
+                db.GratitudeRecords.Remove(record);
+                await db.SaveChangesAsync();
+                return Results.NoContent();
             });
 
-            //app.MapPost("api/gratitude-records/", async (ApplicationDbContext db, GratitudeRecord newRecord) =>
-            //{
-            //    if (newRecord is null)
-            //        return Results.BadRequest("newRecord is null");
-
-            //    // Determine current DayPart based on UTC time
-            //    var now = DateTime.UtcNow.Hour;
-            //    var dayParts = await db.DayParts.ToListAsync();
-            //    var currentDayPart = dayParts.FirstOrDefault(dp =>
-            //       now >= dp.StartTime.Hours && now <= dp.EndTime.Hours
-            //    );
-
-            //    if (currentDayPart == null)
-            //        return Results.BadRequest("No valid DayPart found for the current time.");
-
-
-            //    newRecord.DayPartId = currentDayPart.DayPartId;
-            //    newRecord.GratitudeRecordId = Guid.NewGuid();
-            //    newRecord.CreatedAt = DateTime.UtcNow;
-
-
-            //    db.GratitudeRecords.Add(newRecord);
-            //    await db.SaveChangesAsync();
-
-            //    return Results.Created($"/api/gratitude-records/{newRecord.GratitudeRecordId}", newRecord);
-            //});
-
-            return app;
+            return group;
         }
     }
 }

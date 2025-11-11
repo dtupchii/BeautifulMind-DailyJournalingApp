@@ -26,8 +26,8 @@ namespace DailyJournaling.API.Endpoints
                     return Results.BadRequest("newAnswerCreateUpdateDTO is null");
                 var newAnswer = newAnswerCreateUpdateDTO.Adapt<Answer>();
                 newAnswer.AnswerId = Guid.NewGuid();
-                newAnswer.GratitudeRecordId = Guid.Parse("d3b5f3a1-3c4e-4f5a-9f7e-1a2b3c4d5e6f");
-                newAnswer.QuestionId = Guid.Parse("9d8e61ee-6e3a-48ed-9a78-67ce730c403e");
+                newAnswer.GratitudeRecordId = Guid.Parse("d3b5f3a1-3c4e-4f5a-9f7e-1a2b3c4d5e6f"); // will change later to use data from the frontend
+                newAnswer.QuestionId = Guid.Parse("9d8e61ee-6e3a-48ed-9a78-67ce730c403e"); // will change later to use data from the frontend
                 db.Answers.Add(newAnswer);
                 await db.SaveChangesAsync();
                 return Results.Created($"/api/answers/{newAnswer.AnswerId}", newAnswer.Adapt<AnswerDTO>());

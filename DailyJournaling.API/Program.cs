@@ -40,5 +40,6 @@ app.MapGet("/", () => Results.Ok("API is running")).WithOpenApi();
 
 app.MapGroup("/api/moodstates").MapMoodStateEndpoints();
 app.MapGroup("/api/answers").MapAnswerEndpoints();
+app.MapGroup("/api/gratitude-records").MapGratitudeRecordEndpoints();
 
 app.Run();
