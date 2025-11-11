@@ -41,7 +41,7 @@ namespace DailyJournaling.API.Endpoints
                 existingMoodState.MoodStateName = updatedMoodState.MoodStateName;
                 existingMoodState.IconUrl = updatedMoodState.IconUrl;
                 await db.SaveChangesAsync();
-                return Results.NoContent();
+                return Results.Ok(existingMoodState.Adapt<MoodStateDTO>());
             });
             group.MapDelete("/{id}", async (ApplicationDbContext db, Guid id) =>
             {
@@ -50,7 +50,7 @@ namespace DailyJournaling.API.Endpoints
                     return Results.NotFound();
                 db.MoodStates.Remove(moodState);
                 await db.SaveChangesAsync();
-                return Results.NoContent();
+                return Results.Ok("Mood deleted");
             });
 
 

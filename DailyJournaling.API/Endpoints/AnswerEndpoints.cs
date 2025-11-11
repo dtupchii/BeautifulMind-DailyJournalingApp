@@ -30,7 +30,7 @@ namespace DailyJournaling.API.Endpoints
                 newAnswer.QuestionId = Guid.Parse("9d8e61ee-6e3a-48ed-9a78-67ce730c403e"); // will change later to use data from the frontend
                 db.Answers.Add(newAnswer);
                 await db.SaveChangesAsync();
-                return Results.Created($"/api/answers/{newAnswer.AnswerId}", newAnswer.Adapt<AnswerDTO>());
+                return Results.Created($"/{newAnswer.AnswerId}", newAnswer.Adapt<AnswerDTO>());
             });
             group.MapPut("/{id}", async (ApplicationDbContext db, Guid id, AnswerCreateUpdateDTO updatedAnswerDTO) =>
             {
@@ -42,7 +42,7 @@ namespace DailyJournaling.API.Endpoints
                     return Results.NotFound();
                 existingAnswer.Text = updatedAnswer.Text;
                 await db.SaveChangesAsync();
-                return Results.NoContent();
+                return Results.Ok(existingAnswer.Adapt<AnswerDTO>());
             });
             group.MapDelete("/{id}", async (ApplicationDbContext db, Guid id) =>
             {
@@ -51,7 +51,7 @@ namespace DailyJournaling.API.Endpoints
                     return Results.NotFound();
                 db.Answers.Remove(answer);
                 await db.SaveChangesAsync();
-                return Results.NoContent();
+                return Results.Ok("Answer deleted");
             });
             return group;
         }

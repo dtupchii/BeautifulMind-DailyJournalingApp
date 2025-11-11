@@ -22,8 +22,9 @@ namespace DailyJournaling.API.Endpoints
             });
             group.MapPost("/", async (ApplicationDbContext db, GratitudeRecordCreateUpdateDTO newRecordDTO) =>
             {
-                if (newRecordDTO is null)
-                    return Results.BadRequest("newRecord is null");
+                var moodStatefromDB = await db.MoodStates.FindAsync(newRecordDTO.MoodStateId);
+                if (newRecordDTO is null || moodStatefromDB is null)
+                    return Results.BadRequest("newRecord is invalid");
 
                 // Determine current DayPart based on UTC time
                 // will change later to use data from the frontend
@@ -64,7 +65,7 @@ namespace DailyJournaling.API.Endpoints
                     return Results.NotFound();
                 existingRecord.MoodStateId = updatedRecord.MoodStateId;
                 await db.SaveChangesAsync();
-                return Results.NoContent();
+                return Results.Ok(existingRecord.Adapt<GratitudeRecordDTO>());
             });
             group.MapDelete("/{id}", async (ApplicationDbContext db, Guid id) =>
             {
@@ -73,7 +74,7 @@ namespace DailyJournaling.API.Endpoints
                     return Results.NotFound();
                 db.GratitudeRecords.Remove(record);
                 await db.SaveChangesAsync();
-                return Results.NoContent();
+                return Results.Ok("Record deleted");
             });
 
             return group;
