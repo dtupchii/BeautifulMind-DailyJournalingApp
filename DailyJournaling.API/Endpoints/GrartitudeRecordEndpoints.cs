@@ -2,8 +2,9 @@
 using DailyJournaling.API.Models;
 using DailyJournaling.API.Models.DTOs;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using System;
+using System.Security.Claims;
 
 namespace DailyJournaling.API.Endpoints
 {
@@ -11,28 +12,34 @@ namespace DailyJournaling.API.Endpoints
     {
         public static RouteGroupBuilder MapGratitudeRecordEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/", async (ApplicationDbContext db) =>
+            group.MapGet("/", [Authorize] async (ApplicationDbContext db) =>
             {
                 var records = await db.GratitudeRecords.Include(u => u.Answers).AsNoTracking().ToListAsync();
                 foreach (var rec in records)
                     rec.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(rec.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 return Results.Ok(records.Adapt<List<GratitudeRecordDTO>>());
             });
-            group.MapGet("/{id}", async (ApplicationDbContext db, Guid id) =>
+            group.MapGet("/{id}", [Authorize] async (ApplicationDbContext db, Guid id) =>
             {
                 var record = await db.GratitudeRecords.Include(u => u.Answers).FirstOrDefaultAsync(r => r.GratitudeRecordId == id);
+                if (record is null)
+                    return Results.NotFound();
                 record.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(record.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
-                return record is not null ? Results.Ok(record.Adapt<GratitudeRecordDTO>()) : Results.NotFound();
+                return Results.Ok(record.Adapt<GratitudeRecordDTO>());
             });
-            group.MapPost("/", async (ApplicationDbContext db, GratitudeRecordCreateUpdateDTO newRecordDTO) =>
+            group.MapPost("/", [Authorize] async (ApplicationDbContext db, GratitudeRecordCreateUpdateDTO newRecordDTO, HttpContext httpContext) =>
             {
                 var moodStatefromDB = await db.MoodStates.FindAsync(newRecordDTO.MoodStateId);
                 if (newRecordDTO is null || moodStatefromDB is null)
                     return Results.BadRequest("newRecord is invalid");
 
-                // Determine current DayPart based on UTC time
-                // will change later to use data from the frontend
-                // because dayPay should be determined by the time user started filling the form
+                var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                    return Results.Unauthorized();
+
+                // Determine current DayPart
+                // will be changed later to use data from the frontend
+                // because dayPay should be determined by the time user started filling out the form
                 var now = DateTime.Now.TimeOfDay;
                 var dayParts = await db.DayParts.ToListAsync();
                 var currentDayPart = dayParts.FirstOrDefault(dp =>
@@ -49,9 +56,10 @@ namespace DailyJournaling.API.Endpoints
                 if (currentDayPart == null)
                     return Results.BadRequest("No valid DayPart found for the current time.");
 
+
                 var newRecord = newRecordDTO.Adapt<GratitudeRecord>();
                 newRecord.GratitudeRecordId = Guid.NewGuid();
-                newRecord.UserId = Guid.Parse("d290f1ee-6c54-4b01-90e6-d701748f0851"); // will change later to use data from the frontend
+                newRecord.UserId = userId;
                 newRecord.CreatedAt = DateTime.UtcNow;
                 newRecord.DayPartId = currentDayPart.DayPartId;
                 db.GratitudeRecords.Add(newRecord);
@@ -60,7 +68,7 @@ namespace DailyJournaling.API.Endpoints
 
                 return Results.Created($"/{newRecord.GratitudeRecordId}", newRecord.Adapt<GratitudeRecordDTO>());
             });
-            group.MapPut("/{id}", async (ApplicationDbContext db, Guid id, GratitudeRecordCreateUpdateDTO updatedRecordDTO) =>
+            group.MapPut("/{id}", [Authorize] async (ApplicationDbContext db, Guid id, GratitudeRecordCreateUpdateDTO updatedRecordDTO) =>
             {
                 if (updatedRecordDTO is null)
                     return Results.BadRequest("updatedRecord is null");
@@ -73,7 +81,7 @@ namespace DailyJournaling.API.Endpoints
                 existingRecord.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(existingRecord.CreatedAt, TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"));
                 return Results.Ok(existingRecord.Adapt<GratitudeRecordDTO>());
             });
-            group.MapDelete("/{id}", async (ApplicationDbContext db, Guid id) =>
+            group.MapDelete("/{id}", [Authorize] async (ApplicationDbContext db, Guid id) =>
             {
                 var record = await db.GratitudeRecords.FindAsync(id);
                 if (record is null)

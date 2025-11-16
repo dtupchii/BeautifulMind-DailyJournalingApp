@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
-using DailyJournaling.API.Models;
+﻿using DailyJournaling.API.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace DailyJournaling.API.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<User>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
@@ -17,6 +18,14 @@ namespace DailyJournaling.API.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<GratitudeRecord>()
+                .HasOne(g => g.User)
+                .WithMany(u => u.GratitudeRecords)
+                .HasForeignKey(g => g.UserId)
+                .IsRequired();
+
             modelBuilder.Entity<DayPart>().HasData(
                 new DayPart
                 {
@@ -92,40 +101,6 @@ namespace DailyJournaling.API.Data
                 {
                     MoodStateId = Guid.Parse("7b2ba7ce-a5c4-4191-bb11-d73f2cbf80d8"),
                     MoodStateName = "Very Unhappy"
-                }
-            );
-
-            modelBuilder.Entity<User>().HasData(
-                new User
-                {
-                    UserId = Guid.Parse("d290f1ee-6c54-4b01-90e6-d701748f0851"),
-                    Email = "admin@mail.com",
-                    FirstName = "Admin",
-                    LastName = "User",
-                    PasswordHash = "hashed_password_placeholder",
-                    PasswordSalt = "salt_placeholder",
-                    PhoneNumber = "123-456-7890"
-                }
-            );
-
-            modelBuilder.Entity<GratitudeRecord>().HasData(
-                new GratitudeRecord
-                {
-                    GratitudeRecordId = Guid.Parse("d3b5f3a1-3c4e-4f5a-9f7e-1a2b3c4d5e6f"),
-                    CreatedAt = new DateTime(2025, 11, 10, 0, 0, 0, DateTimeKind.Utc),
-                    UserId = Guid.Parse("d290f1ee-6c54-4b01-90e6-d701748f0851"),
-                    MoodStateId = Guid.Parse("8a4381c7-c442-4404-aa78-951edba66a75"),
-                    DayPartId = Guid.Parse("ae21d84f-1f1a-4d63-a1cd-edcc41722a6c")
-                }
-            );
-
-            modelBuilder.Entity<Answer>().HasData(
-                new Answer
-                {
-                    AnswerId = Guid.Parse("a1b2c3d4-e5f6-4789-0abc-def123456789"),
-                    Text = "I am grateful for my family.",
-                    QuestionId = Guid.Parse("9d8e61ee-6e3a-48ed-9a78-67ce730c403e"),
-                    GratitudeRecordId = Guid.Parse("d3b5f3a1-3c4e-4f5a-9f7e-1a2b3c4d5e6f")
                 }
             );
         }
